@@ -1,0 +1,41 @@
+  socket.on("my conversation", async (token) => {
+    //console.log(token);
+    //console.log("this is your conversation");
+    const decoded = jwt.verify(token, "myprivatekey");
+    let id = decoded._id;
+    let conversations = await Conversation.find({ users: id }).populate(
+      "users"
+    );
+    //console.log(conversations);
+    const result = sockets.find(({ userId }) => userId === id);
+    //console.log("found array");
+    //console.log(result);
+    socket.join(result.socketId);
+    io.to(result.socketId).emit("conversations", conversations);
+  });
+  socket.on("create conversation", async (userId) => {
+    const decoded = jwt.verify(userId.currentUser, "myprivatekey");
+    let currentUser = decoded._id;
+    let anotherUser = userId.anotherUser;
+    let conversation = new Conversation({
+      name: "conversation",
+      users: [currentUser, anotherUser],
+    });
+    //console.log(conversation);
+    await conversation.save();
+  });
+  socket.on("conversation", async (conv) => {
+    //console.log(conv);
+    let msg = await Message.find({ conversation: conv });
+    let conversation = await Conversation.findById(conv);
+    conversation.users.forEach((id) => {
+      //console.log(id)
+      sockets
+        .filter((e) => e.userId == id)
+        .forEach((socket) => {
+          //console.log(socket);
+          //socket.join(socket.socketId);
+          io.to(socket.socketId).emit("chat message", msg);
+        });
+    });
+  });
