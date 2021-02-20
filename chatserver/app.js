@@ -71,7 +71,7 @@ io.on("connection", async (socket) => {
         .forEach((socket) => {
           //console.log(socket);
           //socket.join(socket.socketId);
-          io.to(socket.socketId).emit("chat message", 'message');
+          io.to(socket.socketId).emit("chat message", message);
         });
     });
   });
